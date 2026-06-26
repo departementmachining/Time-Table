@@ -42,30 +42,6 @@
       padding: 6px 8px; text-align: center;
       font-size: 13px; font-weight: 600; color: #1a237e;
     }
-    .type-cell {
-      border: 1px solid #cfd8dc; padding: 2px 8px; font-size: 12px;
-      color: #546e7a; text-align: center; white-space: nowrap;
-      background: #eceff1; width: 52px;
-    }
-    .item-cell {
-      border: 1px solid #cfd8dc; padding: 4px 10px;
-      vertical-align: middle; font-weight: 500;
-      font-size: 13px; color: #263238;
-    }
-    .item-name {
-      cursor: pointer; border-bottom: 1px dashed #90a4ae;
-    }
-    .item-input {
-      width: 100%; border: 1px solid #29b6f6; border-radius: 4px;
-      padding: 2px 6px; font-size: 13px;
-    }
-    .gantt-cell {
-      width: 60px; height: 28px; border: 1px solid #cfd8dc;
-      cursor: pointer; transition: background 0.12s; user-select: none;
-    }
-    .action-cell {
-      border: 1px solid #cfd8dc; text-align: center; vertical-align: middle; width: 60px;
-    }
     .actions { display: flex; gap: 12px; margin-top: 22px; flex-wrap: wrap; }
     .btn {
       color: #fff; border: none; border-radius: 6px;
@@ -73,159 +49,158 @@
       font-weight: 600; transition: opacity 0.15s;
     }
     .btn:hover { opacity: 0.85; }
-    .btn-sm {
-      color: #fff; border: none; border-radius: 6px;
-      padding: 4px 10px; cursor: pointer; font-size: 13px;
-      font-weight: 600; transition: opacity 0.15s;
+    .btn-del {
+      color: #fff; background: #ef5350; border: none; border-radius: 6px;
+      padding: 4px 10px; cursor: pointer; font-size: 13px; font-weight: 600;
     }
-    .btn-sm:hover { opacity: 0.85; }
+    .btn-del:hover { background: #c62828; }
     .tip { font-size: 11px; color: #b0bec5; margin-top: 18px; text-align: right; }
-    tr.even { background: #f9fbe7; }
-    tr.odd { background: #fff; }
+    .item-name { cursor: pointer; border-bottom: 1px dashed #90a4ae; }
+    .item-input {
+      width: 100%; border: 1px solid #29b6f6; border-radius: 4px;
+      padding: 2px 6px; font-size: 13px;
+    }
   </style>
 </head>
 <body>
 <div id="root"></div>
 
 <script type="text/babel">
-const { useState, useRef } = React;
+const { useState } = React;
 
-const DEFAULT_TIME_SLOTS = [
-  "13.00","13.30","14.00","14.30","15.00","15.30",
-  "16.00","16.30","17.00","17.30","18.00","18.30"
+const TIME_SLOTS = ["13.00","13.30","14.00","14.30","15.00","15.30","16.00","16.30","17.00","17.30","18.00","18.30"];
+
+const INIT_ROWS = [
+  { id:1, item:"Lepas Spindle",             plan:["13.00","13.30","14.00","14.30"], act:[] },
+  { id:2, item:"Ganti Seal Spindle collant",plan:["14.30","15.00"],                act:[] },
+  { id:3, item:"pasang Spindle",            plan:["15.00","15.30","16.00"],        act:[] },
+  { id:4, item:"Centering pin",             plan:["16.00","16.30"],                act:[] },
+  { id:5, item:"Tes Semburan Coolant",      plan:["17.00"],                        act:[] },
+  { id:6, item:"Trial Bubut",               plan:["17.30"],                        act:[] },
 ];
 
-const DEFAULT_ROWS = [
-  { id: 1, item: "Lepas Spindle",            plan: ["13.00","13.30","14.00","14.30"], act: [] },
-  { id: 2, item: "Ganti Seal Spindle collant", plan: ["14.30","15.00"],              act: [] },
-  { id: 3, item: "pasang Spindle",            plan: ["15.00","15.30","16.00"],       act: [] },
-  { id: 4, item: "Centering pin",             plan: ["16.00","16.30"],               act: [] },
-  { id: 5, item: "Tes Semburan Coolant",      plan: ["17.00"],                       act: [] },
-  { id: 6, item: "Trial Bubut",               plan: ["17.30"],                       act: [] },
-];
+const PLAN_CLR  = "#29b6f6";
+const ACT_CLR   = "#66bb6a";
 
-const PLAN_COLOR  = "#29b6f6";
-const ACT_COLOR   = "#66bb6a";
-const PLAN_HOVER  = "#039be5";
-const ACT_HOVER   = "#43a047";
+// Inline styles to avoid any CSS specificity conflict
+const tdBase = {
+  border: "1px solid #cfd8dc",
+  width: 60,
+  height: 28,
+  cursor: "pointer",
+  userSelect: "none",
+  transition: "background-color 0.12s",
+  padding: 0,
+};
 
-function GanttCell({ filled, isPlan, isHovered, onMouseDown, onMouseEnter, onMouseLeave, onClick }) {
-  const base  = isPlan ? PLAN_COLOR : ACT_COLOR;
-  const hover = isPlan ? PLAN_HOVER : ACT_HOVER;
-  const bg = filled
-    ? (isHovered ? hover : base)
-    : (isHovered ? "#eceff1" : "#fff");
+function Cell({ filled, color, onClick, onMouseDown, onMouseEnter, onMouseLeave }) {
+  const [hov, setHov] = useState(false);
+  let bg = "#ffffff";
+  if (filled) bg = color;
+  if (!filled && hov) bg = "#e0e0e0";
+  if (filled && hov) bg = color + "cc";
   return (
     <td
-      className="gantt-cell"
-      style={{ backgroundColor: bg }}
+      style={{ ...tdBase, backgroundColor: bg }}
       onClick={onClick}
       onMouseDown={onMouseDown}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
+      onMouseEnter={() => { setHov(true); onMouseEnter && onMouseEnter(); }}
+      onMouseLeave={() => { setHov(false); onMouseLeave && onMouseLeave(); }}
     />
   );
 }
 
 function App() {
-  const [title, setTitle]             = useState("Planing Perbaikan Kebocoran Coolant di Spindle DR 303");
-  const [editingTitle, setEditingTitle] = useState(false);
-  const [rows, setRows]               = useState(DEFAULT_ROWS);
-  const [timeSlots]                   = useState(DEFAULT_TIME_SLOTS);
-  const [hoveredCell, setHoveredCell] = useState(null);
-  const [editingItem, setEditingItem] = useState(null);
-  const [itemDraft, setItemDraft]     = useState("");
-  const [dragState, setDragState]     = useState(null);
+  const [title, setTitle]         = useState("Planing Perbaikan Kebocoran Coolant di Spindle DR 303");
+  const [editTitle, setEditTitle] = useState(false);
+  const [rows, setRows]           = useState(INIT_ROWS);
+  const [drag, setDrag]           = useState(null);
+  const [editId, setEditId]       = useState(null);
+  const [draft, setDraft]         = useState("");
 
-  function toggleCell(rowId, type, slot) {
-    setRows(prev => prev.map(r => {
-      if (r.id !== rowId) return r;
-      const arr = r[type];
-      return { ...r, [type]: arr.includes(slot) ? arr.filter(s => s !== slot) : [...arr, slot] };
+  function toggle(id, type, slot) {
+    setRows(p => p.map(r => {
+      if (r.id !== id) return r;
+      const a = r[type];
+      return { ...r, [type]: a.includes(slot) ? a.filter(s=>s!==slot) : [...a, slot] };
     }));
   }
 
-  function handleMouseDownCell(rowId, type, slot) {
-    const row = rows.find(r => r.id === rowId);
+  function onDown(id, type, slot) {
+    const row = rows.find(r=>r.id===id);
     const filling = !row[type].includes(slot);
-    setDragState({ rowId, type, filling });
-    setRows(prev => prev.map(r => {
-      if (r.id !== rowId) return r;
-      const arr = r[type];
-      return { ...r, [type]: filling ? (arr.includes(slot) ? arr : [...arr, slot]) : arr.filter(s => s !== slot) };
+    setDrag({ id, type, filling });
+    setRows(p => p.map(r => {
+      if (r.id !== id) return r;
+      const a = r[type];
+      return { ...r, [type]: filling ? (a.includes(slot)?a:[...a,slot]) : a.filter(s=>s!==slot) };
     }));
   }
 
-  function handleMouseEnterCell(rowId, type, slot) {
-    setHoveredCell({ rowId, type, slot });
-    if (!dragState || dragState.rowId !== rowId || dragState.type !== type) return;
-    setRows(prev => prev.map(r => {
-      if (r.id !== rowId) return r;
-      const arr = r[type];
-      return dragState.filling
-        ? { ...r, [type]: arr.includes(slot) ? arr : [...arr, slot] }
-        : { ...r, [type]: arr.filter(s => s !== slot) };
+  function onEnter(id, type, slot) {
+    if (!drag || drag.id!==id || drag.type!==type) return;
+    setRows(p => p.map(r => {
+      if (r.id !== id) return r;
+      const a = r[type];
+      return drag.filling
+        ? { ...r, [type]: a.includes(slot)?a:[...a,slot] }
+        : { ...r, [type]: a.filter(s=>s!==slot) };
     }));
   }
 
   function addRow() {
-    const newId = Date.now();
-    setRows(prev => [...prev, { id: newId, item: "Item baru", plan: [], act: [] }]);
-    setEditingItem(newId);
-    setItemDraft("Item baru");
+    const id = Date.now();
+    setRows(p => [...p, { id, item:"Item baru", plan:[], act:[] }]);
+    setEditId(id); setDraft("Item baru");
   }
 
-  function deleteRow(id) {
-    setRows(prev => prev.filter(r => r.id !== id));
-  }
+  function delRow(id) { setRows(p=>p.filter(r=>r.id!==id)); }
 
   function saveItem(id) {
-    setRows(prev => prev.map(r => r.id === id ? { ...r, item: itemDraft } : r));
-    setEditingItem(null);
+    setRows(p=>p.map(r=>r.id===id?{...r,item:draft}:r));
+    setEditId(null);
   }
 
   function exportCSV() {
-    const header = ["Item kerja","Type",...timeSlots].join(",");
-    const body = rows.flatMap(r => [
-      [r.item,"Plan",...timeSlots.map(s => r.plan.includes(s) ? "1" : "0")].join(","),
-      [r.item,"Act", ...timeSlots.map(s => r.act.includes(s)  ? "1" : "0")].join(","),
+    const hdr = ["Item kerja","Type",...TIME_SLOTS].join(",");
+    const body = rows.flatMap(r=>[
+      [r.item,"Plan",...TIME_SLOTS.map(s=>r.plan.includes(s)?"1":"0")].join(","),
+      [r.item,"Act", ...TIME_SLOTS.map(s=>r.act.includes(s) ?"1":"0")].join(","),
     ]);
-    const csv  = [header,...body].join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement("a");
-    a.href = url; a.download = "planing.csv"; a.click();
+    const blob = new Blob([[hdr,...body].join("\n")],{type:"text/csv"});
+    const a = document.createElement("a");
+    a.href=URL.createObjectURL(blob); a.download="planing.csv"; a.click();
   }
 
+  const cellTd = (extra={}) => ({
+    border:"1px solid #cfd8dc", padding:"4px 8px",
+    fontSize:13, verticalAlign:"middle", ...extra
+  });
+
   return (
-    <div className="app" onMouseUp={() => setDragState(null)}>
+    <div className="app" onMouseUp={()=>setDrag(null)}>
       <div className="card">
 
         {/* Title */}
         <div className="title-area">
-          {editingTitle ? (
-            <input
-              className="title-input"
-              value={title}
-              autoFocus
-              onChange={e => setTitle(e.target.value)}
-              onBlur={() => setEditingTitle(false)}
-              onKeyDown={e => e.key === "Enter" && setEditingTitle(false)}
-            />
-          ) : (
-            <h1 className="title-text" onClick={() => setEditingTitle(true)} title="Klik untuk edit judul">
-              {title} ✏️
-            </h1>
-          )}
+          {editTitle
+            ? <input className="title-input" value={title} autoFocus
+                onChange={e=>setTitle(e.target.value)}
+                onBlur={()=>setEditTitle(false)}
+                onKeyDown={e=>e.key==="Enter"&&setEditTitle(false)} />
+            : <h1 className="title-text" onClick={()=>setEditTitle(true)} title="Klik untuk edit judul">
+                {title} ✏️
+              </h1>
+          }
         </div>
 
         {/* Legend */}
         <div className="legend">
           <span className="legend-item">
-            <span className="legend-box" style={{ background: PLAN_COLOR }} /> Plan
+            <span className="legend-box" style={{background:PLAN_CLR}}/> Plan
           </span>
           <span className="legend-item">
-            <span className="legend-box" style={{ background: ACT_COLOR }} /> Act
+            <span className="legend-box" style={{background:ACT_CLR}}/> Act
           </span>
           <span className="legend-tip">Klik / drag sel untuk mengisi</span>
         </div>
@@ -235,76 +210,57 @@ function App() {
           <table>
             <thead>
               <tr>
-                <th rowSpan="2" style={{ width: 160 }}>Item kerja</th>
-                <th rowSpan="2" style={{ width: 52 }}>Type</th>
-                <th colSpan={timeSlots.length}>Jam</th>
-                <th rowSpan="2" style={{ width: 60 }}>Aksi</th>
+                <th rowSpan="2" style={{width:160}}>Item kerja</th>
+                <th rowSpan="2" style={{width:52}}>Type</th>
+                <th colSpan={TIME_SLOTS.length}>Jam</th>
+                <th rowSpan="2" style={{width:60}}>Aksi</th>
               </tr>
               <tr>
-                {timeSlots.map(s => <th key={s} style={{ width: 60, fontWeight: 500, fontSize: 12 }}>{s}</th>)}
+                {TIME_SLOTS.map(s=><th key={s} style={{width:60,fontWeight:500,fontSize:12}}>{s}</th>)}
               </tr>
             </thead>
             <tbody>
               {rows.map((row, idx) => {
-                const rowClass = idx % 2 === 0 ? "even" : "odd";
-                const bgColor  = idx % 2 === 0 ? "#f9fbe7" : "#fff";
+                const bg = idx%2===0 ? "#f9fbe7" : "#ffffff";
                 return (
                   <React.Fragment key={row.id}>
-                    {/* Plan row */}
-                    <tr className={rowClass}>
-                      <td className="item-cell" rowSpan="2" style={{ background: bgColor }}>
-                        {editingItem === row.id ? (
-                          <input
-                            className="item-input"
-                            value={itemDraft}
-                            autoFocus
-                            onChange={e => setItemDraft(e.target.value)}
-                            onBlur={() => saveItem(row.id)}
-                            onKeyDown={e => e.key === "Enter" && saveItem(row.id)}
-                          />
-                        ) : (
-                          <span
-                            className="item-name"
-                            title="Klik untuk edit nama"
-                            onClick={() => { setEditingItem(row.id); setItemDraft(row.item); }}
-                          >{row.item}</span>
-                        )}
+                    {/* Plan */}
+                    <tr>
+                      <td rowSpan="2" style={{...cellTd({width:160,background:bg})}}>
+                        {editId===row.id
+                          ? <input className="item-input" value={draft} autoFocus
+                              onChange={e=>setDraft(e.target.value)}
+                              onBlur={()=>saveItem(row.id)}
+                              onKeyDown={e=>e.key==="Enter"&&saveItem(row.id)} />
+                          : <span className="item-name"
+                              onClick={()=>{setEditId(row.id);setDraft(row.item);}}
+                              title="Klik untuk edit nama">{row.item}</span>
+                        }
                       </td>
-                      <td className="type-cell">Plan</td>
-                      {timeSlots.map(s => (
-                        <GanttCell
-                          key={s}
+                      <td style={{...cellTd({width:52,background:"#eceff1",textAlign:"center",color:"#546e7a",fontSize:12})}}>Plan</td>
+                      {TIME_SLOTS.map(s=>(
+                        <Cell key={s}
                           filled={row.plan.includes(s)}
-                          isPlan={true}
-                          isHovered={hoveredCell?.rowId===row.id && hoveredCell?.type==="plan" && hoveredCell?.slot===s}
-                          onClick={() => toggleCell(row.id, "plan", s)}
-                          onMouseDown={() => handleMouseDownCell(row.id, "plan", s)}
-                          onMouseEnter={() => handleMouseEnterCell(row.id, "plan", s)}
-                          onMouseLeave={() => setHoveredCell(null)}
+                          color={PLAN_CLR}
+                          onClick={()=>toggle(row.id,"plan",s)}
+                          onMouseDown={()=>onDown(row.id,"plan",s)}
+                          onMouseEnter={()=>onEnter(row.id,"plan",s)}
                         />
                       ))}
-                      <td className="action-cell" rowSpan="2">
-                        <button
-                          className="btn-sm"
-                          style={{ background: "#ef5350" }}
-                          title="Hapus baris"
-                          onClick={() => deleteRow(row.id)}
-                        >✕</button>
+                      <td rowSpan="2" style={{...cellTd({width:60,textAlign:"center",background:bg})}}>
+                        <button className="btn-del" onClick={()=>delRow(row.id)}>✕</button>
                       </td>
                     </tr>
-                    {/* Act row */}
-                    <tr className={rowClass}>
-                      <td className="type-cell">Act</td>
-                      {timeSlots.map(s => (
-                        <GanttCell
-                          key={s}
+                    {/* Act */}
+                    <tr>
+                      <td style={{...cellTd({width:52,background:"#eceff1",textAlign:"center",color:"#546e7a",fontSize:12})}}>Act</td>
+                      {TIME_SLOTS.map(s=>(
+                        <Cell key={s}
                           filled={row.act.includes(s)}
-                          isPlan={false}
-                          isHovered={hoveredCell?.rowId===row.id && hoveredCell?.type==="act" && hoveredCell?.slot===s}
-                          onClick={() => toggleCell(row.id, "act", s)}
-                          onMouseDown={() => handleMouseDownCell(row.id, "act", s)}
-                          onMouseEnter={() => handleMouseEnterCell(row.id, "act", s)}
-                          onMouseLeave={() => setHoveredCell(null)}
+                          color={ACT_CLR}
+                          onClick={()=>toggle(row.id,"act",s)}
+                          onMouseDown={()=>onDown(row.id,"act",s)}
+                          onMouseEnter={()=>onEnter(row.id,"act",s)}
                         />
                       ))}
                     </tr>
@@ -315,15 +271,12 @@ function App() {
           </table>
         </div>
 
-        {/* Actions */}
         <div className="actions">
-          <button className="btn" style={{ background: "#29b6f6" }} onClick={addRow}>+ Tambah Baris</button>
-          <button className="btn" style={{ background: "#78909c" }} onClick={exportCSV}>⬇ Export CSV</button>
+          <button className="btn" style={{background:"#29b6f6"}} onClick={addRow}>+ Tambah Baris</button>
+          <button className="btn" style={{background:"#78909c"}} onClick={exportCSV}>⬇ Export CSV</button>
         </div>
 
-        <p className="tip">
-          Tip: Klik sel untuk toggle • Drag untuk mengisi banyak sel sekaligus • Klik nama item untuk mengedit
-        </p>
+        <p className="tip">Tip: Klik sel untuk toggle • Drag untuk mengisi banyak sel • Klik nama item untuk mengedit</p>
       </div>
     </div>
   );
